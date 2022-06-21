@@ -1,6 +1,7 @@
 package name.dezalator.model.ship.base;
 
 import name.dezalator.model.base.MovableSpaceObject;
+import name.dezalator.model.helpers.Checks;
 import name.dezalator.model.module.protection.Armor;
 import name.dezalator.model.module.protection.Shield;
 import name.dezalator.model.module.Protection;
@@ -81,5 +82,14 @@ public class SpaceShip extends MovableSpaceObject {
 
     public int getMassDriverDamage() {
         return weapons.stream().filter(e -> e.getClass().equals(MassDriver.class)).mapToInt(Weapon::getDamage).sum();
+    }
+    
+    public void damage(Weapon weapon) {
+        for (Protection protection: protectionItems) {
+            if (protection.getHp() > 0 && Checks.checkAbilityToDamage(weapon, protection)){
+                protection.damage(weapon);
+                return;
+            }
+        }
     }
 }
