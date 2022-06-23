@@ -1,12 +1,16 @@
 package name.dezalator.ui;
 
 import name.dezalator.core.Engine;
+import name.dezalator.core.Player;
 import name.dezalator.core.util.Event;
+import name.dezalator.model.ship.base.SpaceShip;
 import name.dezalator.model.util.Coordinates;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.Objects;
 
 public class GamePanel extends JPanel implements ActionListener {
     static final int SCREEN_WIDTH = 1200;
@@ -15,7 +19,10 @@ public class GamePanel extends JPanel implements ActionListener {
     Coordinates hoveredCell;
     Coordinates previousHoveredCell;
     int turn;
-    String currentPlayerName;
+    UIPlayer player1;
+    UIPlayer player2;
+    UIPlayer currentPlayer;
+
 
     public GamePanel() {
         this.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
@@ -43,7 +50,17 @@ public class GamePanel extends JPanel implements ActionListener {
 
         // internal cell
         if (hoveredCell != null){
-            g.setColor(Color.gray);
+            boolean found = false;
+            for(UIShip ship: currentPlayer.getShips()) {
+                if (ship.getCoordinates().equals(hoveredCell)) {
+                    g.setColor(Color.green);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                g.setColor(Color.gray);
+            }
             g.drawRect(hoveredCell.x, hoveredCell.y, CELL_SIZE, CELL_SIZE);
             previousHoveredCell = hoveredCell;
         }
@@ -52,9 +69,52 @@ public class GamePanel extends JPanel implements ActionListener {
         g.setColor(Color.white);
         g.setFont(new Font("Sans", Font.PLAIN, 15));
         FontMetrics metrics = getFontMetrics(g.getFont());
-        String message = "Player: " + currentPlayerName + "    Turn: " + turn;
+        String message = "Player: " + currentPlayer.getName() + "    Turn: " + turn;
         g.drawString(message, SCREEN_WIDTH - metrics.stringWidth(message), g.getFont().getSize());
 
+        // ships
+        for(UIShip ship: player1.getShips()) {
+            if (player1 == currentPlayer) {
+                g.setColor(Color.green);
+            } else {
+                g.setColor(Color.red);
+            }
+            int radius = CELL_SIZE / 2;
+            g.fillOval(ship.getCoordinates().x+radius/2, ship.getCoordinates().y+radius/2, radius, radius);
+        }
+
+        for(UIShip ship: player2.getShips()) {
+            if (player2 == currentPlayer) {
+                g.setColor(Color.green);
+            } else {
+                g.setColor(Color.red);
+            }
+            g.setColor(Color.red);
+            int radius = CELL_SIZE / 2;
+            g.fillOval(ship.getCoordinates().x+radius/2, ship.getCoordinates().y+radius/2, radius, radius);
+        }
+
+        // ship info
+
+        drawShipInfo(g, player1);
+        drawShipInfo(g, player2);
+    }
+
+    private void drawShipInfo(Graphics g, UIPlayer player1) {
+        String shipType = null;
+        for(UIShip ship: player1.getShips()) {
+            if (ship.getCoordinates().equals(hoveredCell)) {
+                shipType = ship.getType();
+                break;
+            }
+        }
+        if (shipType != null) {
+            g.setColor(Color.white);
+            g.setFont(new Font("Sans", Font.PLAIN, 15));
+            String message = "Ship of type " + shipType + " of player: " + player1.getName();
+            g.drawString(message,  0, g.getFont().getSize());
+            repaint();
+        }
     }
 
     @Override
@@ -94,7 +154,33 @@ public class GamePanel extends JPanel implements ActionListener {
         this.turn = turn;
     }
 
-    public void updatePlayerName(String name) {
-        currentPlayerName = name;
+    public void providePlayers(Player player1, Player player2) {
+        this.player1 = new UIPlayer(player1.getName(), updatePlayerShips(player1));
+        this.player2 = new UIPlayer(player2.getName(), updatePlayerShips(player2));
     }
+
+    private ArrayList<UIShip> updatePlayerShips(Player player) {
+        ArrayList<UIShip> playerShips = new ArrayList<>();
+        for(SpaceShip ship: player.getShips()) {
+            Coordinates coordinates = ship.getCoordinates();
+            coordinates.x = coordinates.x * CELL_SIZE;
+            coordinates.y = coordinates.y * CELL_SIZE;
+            playerShips.add(new UIShip(
+                    ship.getName(),
+                    coordinates,
+                    ship.getSpeed(),
+                    ship.getClass().getSimpleName()));
+        }
+        return  playerShips;
+    }
+
+    public void updateCurrentPlayer(String name) {
+        if(Objects.equals(player1.getName(), name)) {
+            this.currentPlayer = player1;
+        }
+        else {
+            this.currentPlayer = player2;
+        }
+    }
+
 }
