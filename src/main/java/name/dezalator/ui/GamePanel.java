@@ -22,13 +22,14 @@ public class GamePanel extends JPanel implements ActionListener {
     UIPlayer player1;
     UIPlayer player2;
     UIPlayer currentPlayer;
-
+    Coordinates selectedCell;
 
     public GamePanel() {
         this.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
         this.setBackground(Color.black);
         this.setFocusable(true);
         this.addMouseMotionListener(new MouseMovementListener());
+        this.addMouseListener(new MListener());
         this.addKeyListener(new KAdapter());
         startGame();
     }
@@ -73,37 +74,48 @@ public class GamePanel extends JPanel implements ActionListener {
         g.drawString(message, SCREEN_WIDTH - metrics.stringWidth(message), g.getFont().getSize());
 
         // ships
-        for(UIShip ship: player1.getShips()) {
-            if (player1 == currentPlayer) {
-                g.setColor(Color.green);
-            } else {
-                g.setColor(Color.red);
-            }
-            int radius = CELL_SIZE / 2;
-            g.fillOval(ship.getCoordinates().x+radius/2, ship.getCoordinates().y+radius/2, radius, radius);
-        }
-
-        for(UIShip ship: player2.getShips()) {
-            if (player2 == currentPlayer) {
-                g.setColor(Color.green);
-            } else {
-                g.setColor(Color.red);
-            }
-            g.setColor(Color.red);
-            int radius = CELL_SIZE / 2;
-            g.fillOval(ship.getCoordinates().x+radius/2, ship.getCoordinates().y+radius/2, radius, radius);
-        }
+        drawShipsOfPlayer(g, player1);
+        drawShipsOfPlayer(g, player2);
 
         // ship info
 
-        drawShipInfo(g, player1);
-        drawShipInfo(g, player2);
+        drawShipInfoIfHoveredOrSelected(g, player1, hoveredCell);
+        drawShipInfoIfHoveredOrSelected(g, player2, hoveredCell);
+        drawShipInfoIfHoveredOrSelected(g, currentPlayer, selectedCell);
+
+        // selected cell
+
+        if (selectedCell != null) {
+            boolean found = false;
+            for(UIShip ship: currentPlayer.getShips()) {
+                if (ship.getCoordinates().equals(selectedCell)) {
+                    g.setColor(Color.green);
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                g.drawRect(selectedCell.x, selectedCell.y, CELL_SIZE, CELL_SIZE);
+            }
+        }
     }
 
-    private void drawShipInfo(Graphics g, UIPlayer player1) {
+    private void drawShipsOfPlayer(Graphics g, UIPlayer player) {
+        for(UIShip ship: player.getShips()) {
+            if (player == currentPlayer) {
+                g.setColor(Color.green);
+            } else {
+                g.setColor(Color.red);
+            }
+            int radius = CELL_SIZE / 2;
+            g.fillOval(ship.getCoordinates().x+radius/2, ship.getCoordinates().y+radius/2, radius, radius);
+        }
+    }
+
+    private void drawShipInfoIfHoveredOrSelected(Graphics g, UIPlayer player, Coordinates mouseCoordinates) {
         String shipType = null;
-        for(UIShip ship: player1.getShips()) {
-            if (ship.getCoordinates().equals(hoveredCell)) {
+        for(UIShip ship: player.getShips()) {
+            if (ship.getCoordinates().equals(mouseCoordinates)) {
                 shipType = ship.getType();
                 break;
             }
@@ -111,7 +123,7 @@ public class GamePanel extends JPanel implements ActionListener {
         if (shipType != null) {
             g.setColor(Color.white);
             g.setFont(new Font("Sans", Font.PLAIN, 15));
-            String message = "Ship of type " + shipType + " of player: " + player1.getName();
+            String message = "Ship of type " + shipType + " of player: " + player.getName();
             g.drawString(message,  0, g.getFont().getSize());
             repaint();
         }
@@ -132,6 +144,42 @@ public class GamePanel extends JPanel implements ActionListener {
         }
     }
 
+    class MListener implements MouseListener {
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            Coordinates clickCoordinates = getCellCoordinatesFromMouseCoordinates(e.getX(), e.getY());
+            if (clickCoordinates.equals(selectedCell)) {
+                selectedCell = null;
+                repaint(clickCoordinates.x, clickCoordinates.y, CELL_SIZE+1, CELL_SIZE+1);
+            }
+            else {
+                selectedCell = clickCoordinates;
+                repaint(clickCoordinates.x, clickCoordinates.y, CELL_SIZE+1, CELL_SIZE+1);
+            }
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseEntered(MouseEvent e) {
+
+        }
+
+        @Override
+        public void mouseExited(MouseEvent e) {
+
+        }
+    }
+
     public Coordinates getCellCoordinatesFromMouseCoordinates(int x, int y) {
         return new Coordinates(x/CELL_SIZE*CELL_SIZE, y/CELL_SIZE*CELL_SIZE);
     }
@@ -147,6 +195,7 @@ public class GamePanel extends JPanel implements ActionListener {
 
     public void endTurn() {
         Engine.notifyGame(Event.END_TURN);
+        this.selectedCell = null;
         repaint();
     }
 
