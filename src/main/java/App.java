@@ -1,7 +1,8 @@
-import name.dezalator.ui.GameFrame;
+import name.dezalator.core.Engine;
 
 public class App {
     public static void main(String[] args) {
-        new GameFrame();
+        Engine engine = new Engine();
+        engine.startGame();
     }
 }
