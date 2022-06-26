@@ -24,6 +24,10 @@ public class Coordinates {
         return x == that.x && y == that.y;
     }
 
+    public Coordinates scaled(int scale) {
+        return new Coordinates(this.x*scale, this.y*scale);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(x, y);

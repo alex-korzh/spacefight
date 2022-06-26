@@ -75,7 +75,7 @@ public class GameFieldPanel extends JPanel implements ActionListener {
         if (hoveredCell != null){
             boolean found = false;
             for(SpaceShip ship: Data.getCurrentPlayerShips()) {
-                if (ship.getCoordinates().equals(hoveredCell)) {
+                if (ship.getCoordinates().scaled(CELL_SIZE).equals(hoveredCell)) {
                     g.setColor(Color.green);
                     found = true;
                     break;
@@ -110,7 +110,7 @@ public class GameFieldPanel extends JPanel implements ActionListener {
         if (selectedCell != null) {
             boolean found = false;
             for(SpaceShip ship: Data.getCurrentPlayerShips()) {
-                if (ship.getCoordinates().equals(selectedCell)) {
+                if (ship.getCoordinates().scaled(CELL_SIZE).equals(selectedCell)) {
                     g.setColor(Color.green);
                     found = true;
                     break;
@@ -124,20 +124,21 @@ public class GameFieldPanel extends JPanel implements ActionListener {
 
     private void drawShipsOfPlayer(Graphics g, Player player) {
         for(SpaceShip ship: player.getShips()) {
+            Coordinates coordinates = ship.getCoordinates().scaled(CELL_SIZE);
             if (Data.isCurrentPlayer(player)) {
                 g.setColor(Color.green);
             } else {
                 g.setColor(Color.red);
             }
             int radius = CELL_SIZE / 2;
-            g.fillOval(ship.getCoordinates().x+radius/2, ship.getCoordinates().y+radius/2, radius, radius);
+            g.fillOval(coordinates.x+radius/2, coordinates.y+radius/2, radius, radius);
         }
     }
 
     private void drawShipInfoIfHoveredOrSelected(Graphics g, Player player, Coordinates mouseCoordinates) {
         String shipType = null;
         for(SpaceShip ship: player.getShips()) {
-            if (ship.getCoordinates().equals(mouseCoordinates)) {
+            if (ship.getCoordinates().scaled(CELL_SIZE).equals(mouseCoordinates)) {
                 shipType = ship.getType();
                 break;
             }

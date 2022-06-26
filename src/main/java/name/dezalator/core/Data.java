@@ -18,7 +18,7 @@ public class Data {
 
         array1.add(new Destroyer(
                 "D1",
-                new Coordinates(500, 1100),
+                new Coordinates(10, 22),
                 2,
                 new ArrayList<>(),
                 new ArrayList<>()
@@ -26,7 +26,7 @@ public class Data {
 
         array2.add(new Destroyer(
                 "D2",
-                new Coordinates(500, 0),
+                new Coordinates(10, 0),
                 2,
                 new ArrayList<>(),
                 new ArrayList<>()
