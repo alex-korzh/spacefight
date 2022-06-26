@@ -5,6 +5,8 @@ import name.dezalator.core.Player;
 import name.dezalator.core.util.Event;
 import name.dezalator.model.ship.base.SpaceShip;
 import name.dezalator.model.util.Coordinates;
+import name.dezalator.ui.dto.UIPlayer;
+import name.dezalator.ui.dto.UIShip;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,9 +14,9 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class GamePanel extends JPanel implements ActionListener {
-    static final int SCREEN_WIDTH = 1200;
-    static final int SCREEN_HEIGHT = 1200;
+public class GameFieldPanel extends JPanel implements ActionListener {
+    int screenWidth;
+    int screenHeight;
     static final int CELL_SIZE = 50;
     Coordinates hoveredCell;
     Coordinates previousHoveredCell;
@@ -23,30 +25,58 @@ public class GamePanel extends JPanel implements ActionListener {
     UIPlayer player2;
     UIPlayer currentPlayer;
     Coordinates selectedCell;
+    MenuData menuData;
+    boolean gameStarted;
 
-    public GamePanel() {
-        this.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
+    public GameFieldPanel(int screenWidth, int screenHeight) {
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
+        this.setPreferredSize(new Dimension(screenWidth, screenHeight));
         this.setBackground(Color.black);
         this.setFocusable(true);
         this.addMouseMotionListener(new MouseMovementListener());
         this.addMouseListener(new MListener());
         this.addKeyListener(new KAdapter());
-        startGame();
+        this.menuData = new MenuData(screenWidth, screenHeight);
+        this.gameStarted = false;
     }
 
-    private void startGame() {
-    }
+
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        draw(g);
+        if(gameStarted) {
+            draw(g);
+        }
+        else {
+            drawMenu(g);
+        }
+    }
+
+    private void drawMenu(Graphics g) {
+        g.setColor(Color.white);
+        g.drawRect(menuData.menuWidth, menuData.menuHeightPoint, menuData.menuWidth, menuData.menuHeight);
+
+        Font font = new Font("Sans", Font.PLAIN, 45);
+        g.setFont(font);
+        FontMetrics metrics = getFontMetrics(g.getFont());
+
+
+        for( int y=menuData.menuHeightPoint+menuData.internalStep, i=0; y<(menuData.menuHeightPoint+menuData.menuHeight-menuData.internalStep); y += (menuData.buttonHeight + menuData.internalStep), i++) {
+            g.drawRect(menuData.menuWidth+menuData.internalStep, y, menuData.buttonWidth, menuData.buttonHeight);
+            if (i < menuData.messages.length) {
+                int gap = menuData.buttonWidth/2 - metrics.stringWidth(menuData.messages[i])/2;
+                g.drawString(menuData.messages[i], menuData.menuWidth+menuData.internalStep+gap, y+menuData.buttonHeight*9/10);
+            }
+
+        }
     }
 
     private void draw(Graphics g) {
         // GRID
-        for (int i = 0; i < SCREEN_HEIGHT / CELL_SIZE; i++) {
-            g.drawLine(i * CELL_SIZE, 0, i * CELL_SIZE, SCREEN_HEIGHT);
-            g.drawLine(0, i * CELL_SIZE, SCREEN_WIDTH, i * CELL_SIZE);
+        for (int i = 0; i < screenHeight / CELL_SIZE; i++) {
+            g.drawLine(i * CELL_SIZE, 0, i * CELL_SIZE, screenHeight);
+            g.drawLine(0, i * CELL_SIZE, screenWidth, i * CELL_SIZE);
         }
 
         // internal cell
@@ -71,7 +101,7 @@ public class GamePanel extends JPanel implements ActionListener {
         g.setFont(new Font("Sans", Font.PLAIN, 15));
         FontMetrics metrics = getFontMetrics(g.getFont());
         String message = "Player: " + currentPlayer.getName() + "    Turn: " + turn;
-        g.drawString(message, SCREEN_WIDTH - metrics.stringWidth(message), g.getFont().getSize());
+        g.drawString(message, screenWidth - metrics.stringWidth(message), g.getFont().getSize());
 
         // ships
         drawShipsOfPlayer(g, player1);
@@ -148,14 +178,21 @@ public class GamePanel extends JPanel implements ActionListener {
 
         @Override
         public void mouseClicked(MouseEvent e) {
-            Coordinates clickCoordinates = getCellCoordinatesFromMouseCoordinates(e.getX(), e.getY());
-            if (clickCoordinates.equals(selectedCell)) {
-                selectedCell = null;
-                repaint(clickCoordinates.x, clickCoordinates.y, CELL_SIZE+1, CELL_SIZE+1);
+            if (gameStarted) {
+                Coordinates clickCoordinates = getCellCoordinatesFromMouseCoordinates(e.getX(), e.getY());
+                if (clickCoordinates.equals(selectedCell)) {
+                    selectedCell = null;
+                    repaint(clickCoordinates.x, clickCoordinates.y, CELL_SIZE + 1, CELL_SIZE + 1);
+                } else {
+                    selectedCell = clickCoordinates;
+                    repaint(clickCoordinates.x, clickCoordinates.y, CELL_SIZE + 1, CELL_SIZE + 1);
+                }
             }
             else {
-                selectedCell = clickCoordinates;
-                repaint(clickCoordinates.x, clickCoordinates.y, CELL_SIZE+1, CELL_SIZE+1);
+                Integer number = getButtonNumberFromMouseCoordinates(e.getX(), e.getY());
+                if (number != null) {
+                    menuButtonClicked(number);
+                }
             }
         }
 
@@ -230,6 +267,35 @@ public class GamePanel extends JPanel implements ActionListener {
         else {
             this.currentPlayer = player2;
         }
+    }
+
+    public Integer getButtonNumberFromMouseCoordinates(int x, int y) {
+        if (x >= menuData.menuWidth+menuData.internalStep && x <= menuData.menuWidth+menuData.internalStep+menuData.buttonWidth){
+            for (int i=0; i<=menuData.messages.length;i++) {
+                if (y >=menuData.menuHeightPoint+menuData.internalStep+i*(menuData.internalStep+menuData.buttonHeight) &&
+                        y <= menuData.menuHeightPoint+menuData.internalStep+i*(menuData.internalStep+menuData.buttonHeight) + menuData.buttonHeight) {
+                    return i;
+                }
+            }
+        }
+        return null;
+    }
+
+    public void menuButtonClicked(int number) {
+        String option = menuData.messages[number];
+        switch (option) {
+            case MenuData.START_GAME -> startGame();
+            case MenuData.EXIT -> exit();
+        }
+    }
+
+    private void exit() {
+        System.exit(0);
+    }
+
+    private void startGame() {
+        this.gameStarted = true;
+        repaint();
     }
 
 }

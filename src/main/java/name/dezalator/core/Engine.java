@@ -44,9 +44,9 @@ public class Engine {
 
     public void startGame() {
         gameFrame = new GameFrame();
-        gameFrame.gamePanel.providePlayers(player1, player2);
-        gameFrame.gamePanel.updateCurrentPlayer(player1.getName());
-        gameFrame.gamePanel.updateTurn(turn);
+        gameFrame.gameFieldPanel.providePlayers(player1, player2);
+        gameFrame.gameFieldPanel.updateCurrentPlayer(player1.getName());
+        gameFrame.gameFieldPanel.updateTurn(turn);
     }
 
     public static void notifyGame(Event event) {
@@ -54,10 +54,10 @@ public class Engine {
             case END_TURN -> {
                 if (currentPlayer == player2) {
                     turn += 1;
-                    gameFrame.gamePanel.updateTurn(turn);
+                    gameFrame.gameFieldPanel.updateTurn(turn);
                 }
                 currentPlayer = currentPlayer == player1 ? player2 : player1;
-                gameFrame.gamePanel.updateCurrentPlayer(currentPlayer.getName());
+                gameFrame.gameFieldPanel.updateCurrentPlayer(currentPlayer.getName());
             }
         }
     }

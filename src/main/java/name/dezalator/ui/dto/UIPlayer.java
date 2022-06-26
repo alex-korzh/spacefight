@@ -1,6 +1,4 @@
-package name.dezalator.ui;
-
-import name.dezalator.model.ship.base.SpaceShip;
+package name.dezalator.ui.dto;
 
 import java.util.ArrayList;
 

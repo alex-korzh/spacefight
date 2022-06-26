@@ -1,4 +1,4 @@
-package name.dezalator.ui;
+package name.dezalator.ui.dto;
 
 import name.dezalator.model.util.Coordinates;
 
