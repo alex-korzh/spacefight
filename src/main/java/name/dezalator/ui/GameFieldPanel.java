@@ -9,6 +9,10 @@ import name.dezalator.model.util.Coordinates;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 
 public class GameFieldPanel extends JPanel implements ActionListener {
     int screenWidth;
@@ -19,6 +23,8 @@ public class GameFieldPanel extends JPanel implements ActionListener {
     Coordinates selectedCell;
     MenuData menuData;
     boolean inGame;
+    Coordinates min;
+    Coordinates max;
 
     public GameFieldPanel(int screenWidth, int screenHeight) {
         this.screenWidth = screenWidth;
@@ -31,6 +37,8 @@ public class GameFieldPanel extends JPanel implements ActionListener {
         this.addKeyListener(new KAdapter());
         this.menuData = new MenuData(screenWidth, screenHeight);
         this.inGame = false;
+        this.min = new Coordinates(0,0);
+        this.max = new Coordinates(screenWidth/CELL_SIZE, screenHeight/CELL_SIZE);
     }
 
 
@@ -71,6 +79,31 @@ public class GameFieldPanel extends JPanel implements ActionListener {
             g.drawLine(0, i * CELL_SIZE, screenWidth, i * CELL_SIZE);
         }
 
+
+        // turn, player
+        g.setColor(Color.white);
+        g.setFont(new Font("Sans", Font.PLAIN, 15));
+        FontMetrics metrics = getFontMetrics(g.getFont());
+        String message = "Player: " + Data.getCurrentPlayerName() + "    Turn: " + Data.getTurn();
+        g.drawString(message, screenWidth - metrics.stringWidth(message), g.getFont().getSize());
+
+        // ships
+        drawShipsOfPlayer(g, Data.getPlayer1());
+        drawShipsOfPlayer(g, Data.getPlayer2());
+
+        // ship info
+        drawShipInfoIfHoveredOrSelected(g, Data.getCurrentPlayer(), selectedCell);
+        if (selectedCell == null){
+            drawShipInfoIfHoveredOrSelected(g, Data.getPlayer1(), hoveredCell);
+            drawShipInfoIfHoveredOrSelected(g, Data.getPlayer2(), hoveredCell);
+        }
+
+        // available for move
+
+        for (SpaceShip ship: Data.getCurrentPlayerShips()) {
+            BFS(g, ship.getCoordinates(), ship.getSpeed());
+        }
+
         // hovered cell
         if (hoveredCell != null){
             boolean found = findShipByCoordinates(hoveredCell);
@@ -95,24 +128,29 @@ public class GameFieldPanel extends JPanel implements ActionListener {
             }
         }
 
-        // turn, player
-        g.setColor(Color.white);
-        g.setFont(new Font("Sans", Font.PLAIN, 15));
-        FontMetrics metrics = getFontMetrics(g.getFont());
-        String message = "Player: " + Data.getCurrentPlayerName() + "    Turn: " + Data.getTurn();
-        g.drawString(message, screenWidth - metrics.stringWidth(message), g.getFont().getSize());
+    }
 
-        // ships
-        drawShipsOfPlayer(g, Data.getPlayer1());
-        drawShipsOfPlayer(g, Data.getPlayer2());
+    private void BFS(Graphics g, Coordinates coordinates, int maxRange) {
+        Coordinates initCoordinates = coordinates;
+        Map<Coordinates, Boolean> visited = new HashMap<>();
 
-        // ship info
-        drawShipInfoIfHoveredOrSelected(g, Data.getCurrentPlayer(), selectedCell);
-        if (selectedCell == null){
-            drawShipInfoIfHoveredOrSelected(g, Data.getPlayer1(), hoveredCell);
-            drawShipInfoIfHoveredOrSelected(g, Data.getPlayer2(), hoveredCell);
+        LinkedList<Coordinates> queue = new LinkedList<>();
+
+        visited.put(coordinates, true);
+        queue.add(coordinates);
+        while (queue.size() != 0) {
+            coordinates = queue.poll();
+            drawCellOfColor(g, coordinates.scaled(CELL_SIZE), Color.blue);
+
+            for (Coordinates c: coordinates.getNeighbours()) {
+                if(!visited.containsKey(c) && c.inRange(min, max) && c.distance(initCoordinates) <= maxRange) {
+                    visited.put(c, true);
+                    queue.add(c);
+                }
+            }
         }
     }
+
 
     private boolean findShipByCoordinates(Coordinates coordinates) {
         SpaceShip found = Data.getCurrentPlayerShips().stream()

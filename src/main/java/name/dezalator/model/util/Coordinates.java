@@ -31,6 +31,14 @@ public class Coordinates {
         ));
     }
 
+    public boolean inRange(Coordinates min, Coordinates max) {
+        return this.x >= min.x && this.x <= max.x && this.y >= min.y && this.y <= max.y;
+    }
+
+    public int distance(Coordinates coordinates) {
+        return Math.abs(coordinates.x-this.x) + Math.abs(coordinates.y - this.y);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
