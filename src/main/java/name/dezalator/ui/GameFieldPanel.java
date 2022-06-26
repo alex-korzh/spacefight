@@ -18,7 +18,7 @@ public class GameFieldPanel extends JPanel implements ActionListener {
     Coordinates previousHoveredCell;
     Coordinates selectedCell;
     MenuData menuData;
-    boolean gameStarted;
+    boolean inGame;
 
     public GameFieldPanel(int screenWidth, int screenHeight) {
         this.screenWidth = screenWidth;
@@ -30,14 +30,14 @@ public class GameFieldPanel extends JPanel implements ActionListener {
         this.addMouseListener(new MListener());
         this.addKeyListener(new KAdapter());
         this.menuData = new MenuData(screenWidth, screenHeight);
-        this.gameStarted = false;
+        this.inGame = false;
     }
 
 
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        if(gameStarted) {
+        if(inGame) {
             draw(g);
         }
         else {
@@ -170,7 +170,7 @@ public class GameFieldPanel extends JPanel implements ActionListener {
 
         @Override
         public void mouseClicked(MouseEvent e) {
-            if (gameStarted) {
+            if (inGame) {
                 Coordinates clickCoordinates = getCellCoordinatesFromMouseCoordinates(e.getX(), e.getY());
                 if (clickCoordinates.equals(selectedCell)) {
                     selectedCell = null;
@@ -216,10 +216,19 @@ public class GameFieldPanel extends JPanel implements ActionListener {
     public class KAdapter extends KeyAdapter {
         @Override
         public void keyPressed(KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_SPACE) {
-                endTurn();
+            switch (e.getKeyCode()) {
+                case KeyEvent.VK_SPACE -> endTurn();
+                case KeyEvent.VK_ESCAPE -> endGame();
             }
         }
+    }
+
+    public void endGame() {
+        // TODO actual clear of game data
+//        Engine.notifyGame(Event.END_GAME);
+        this.selectedCell = null;
+        inGame = false;
+        repaint();
     }
 
     public void endTurn() {
@@ -253,7 +262,7 @@ public class GameFieldPanel extends JPanel implements ActionListener {
     }
 
     private void startGame() {
-        this.gameStarted = true;
+        this.inGame = true;
         repaint();
     }
 

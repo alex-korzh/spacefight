@@ -13,7 +13,6 @@ public class Engine {
 
     public void startGame() {
         gameFrame = new GameFrame();
-
     }
 
     public static void notifyGame(Event event) {
