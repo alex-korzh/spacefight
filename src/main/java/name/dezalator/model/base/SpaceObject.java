@@ -22,4 +22,8 @@ public class SpaceObject {
     public Coordinates getCoordinates() {
         return coordinates;
     }
+
+    public String getType() {
+        return this.getClass().getSimpleName();
+    }
 }

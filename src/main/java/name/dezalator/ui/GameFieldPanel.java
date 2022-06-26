@@ -1,18 +1,14 @@
 package name.dezalator.ui;
 
+import name.dezalator.core.Data;
 import name.dezalator.core.Engine;
 import name.dezalator.core.Player;
 import name.dezalator.core.util.Event;
 import name.dezalator.model.ship.base.SpaceShip;
 import name.dezalator.model.util.Coordinates;
-import name.dezalator.ui.dto.UIPlayer;
-import name.dezalator.ui.dto.UIShip;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.Objects;
 
 public class GameFieldPanel extends JPanel implements ActionListener {
     int screenWidth;
@@ -20,10 +16,6 @@ public class GameFieldPanel extends JPanel implements ActionListener {
     static final int CELL_SIZE = 50;
     Coordinates hoveredCell;
     Coordinates previousHoveredCell;
-    int turn;
-    UIPlayer player1;
-    UIPlayer player2;
-    UIPlayer currentPlayer;
     Coordinates selectedCell;
     MenuData menuData;
     boolean gameStarted;
@@ -82,7 +74,7 @@ public class GameFieldPanel extends JPanel implements ActionListener {
         // internal cell
         if (hoveredCell != null){
             boolean found = false;
-            for(UIShip ship: currentPlayer.getShips()) {
+            for(SpaceShip ship: Data.getCurrentPlayerShips()) {
                 if (ship.getCoordinates().equals(hoveredCell)) {
                     g.setColor(Color.green);
                     found = true;
@@ -100,24 +92,24 @@ public class GameFieldPanel extends JPanel implements ActionListener {
         g.setColor(Color.white);
         g.setFont(new Font("Sans", Font.PLAIN, 15));
         FontMetrics metrics = getFontMetrics(g.getFont());
-        String message = "Player: " + currentPlayer.getName() + "    Turn: " + turn;
+        String message = "Player: " + Data.getCurrentPlayerName() + "    Turn: " + Data.getTurn();
         g.drawString(message, screenWidth - metrics.stringWidth(message), g.getFont().getSize());
 
         // ships
-        drawShipsOfPlayer(g, player1);
-        drawShipsOfPlayer(g, player2);
+        drawShipsOfPlayer(g, Data.getPlayer1());
+        drawShipsOfPlayer(g, Data.getPlayer2());
 
         // ship info
 
-        drawShipInfoIfHoveredOrSelected(g, player1, hoveredCell);
-        drawShipInfoIfHoveredOrSelected(g, player2, hoveredCell);
-        drawShipInfoIfHoveredOrSelected(g, currentPlayer, selectedCell);
+        drawShipInfoIfHoveredOrSelected(g, Data.getPlayer1(), hoveredCell);
+        drawShipInfoIfHoveredOrSelected(g, Data.getPlayer2(), hoveredCell);
+        drawShipInfoIfHoveredOrSelected(g, Data.getCurrentPlayer(), selectedCell);
 
         // selected cell
 
         if (selectedCell != null) {
             boolean found = false;
-            for(UIShip ship: currentPlayer.getShips()) {
+            for(SpaceShip ship: Data.getCurrentPlayerShips()) {
                 if (ship.getCoordinates().equals(selectedCell)) {
                     g.setColor(Color.green);
                     found = true;
@@ -130,9 +122,9 @@ public class GameFieldPanel extends JPanel implements ActionListener {
         }
     }
 
-    private void drawShipsOfPlayer(Graphics g, UIPlayer player) {
-        for(UIShip ship: player.getShips()) {
-            if (player == currentPlayer) {
+    private void drawShipsOfPlayer(Graphics g, Player player) {
+        for(SpaceShip ship: player.getShips()) {
+            if (Data.isCurrentPlayer(player)) {
                 g.setColor(Color.green);
             } else {
                 g.setColor(Color.red);
@@ -142,9 +134,9 @@ public class GameFieldPanel extends JPanel implements ActionListener {
         }
     }
 
-    private void drawShipInfoIfHoveredOrSelected(Graphics g, UIPlayer player, Coordinates mouseCoordinates) {
+    private void drawShipInfoIfHoveredOrSelected(Graphics g, Player player, Coordinates mouseCoordinates) {
         String shipType = null;
-        for(UIShip ship: player.getShips()) {
+        for(SpaceShip ship: player.getShips()) {
             if (ship.getCoordinates().equals(mouseCoordinates)) {
                 shipType = ship.getType();
                 break;
@@ -234,39 +226,6 @@ public class GameFieldPanel extends JPanel implements ActionListener {
         Engine.notifyGame(Event.END_TURN);
         this.selectedCell = null;
         repaint();
-    }
-
-    public void updateTurn(int turn) {
-        this.turn = turn;
-    }
-
-    public void providePlayers(Player player1, Player player2) {
-        this.player1 = new UIPlayer(player1.getName(), updatePlayerShips(player1));
-        this.player2 = new UIPlayer(player2.getName(), updatePlayerShips(player2));
-    }
-
-    private ArrayList<UIShip> updatePlayerShips(Player player) {
-        ArrayList<UIShip> playerShips = new ArrayList<>();
-        for(SpaceShip ship: player.getShips()) {
-            Coordinates coordinates = ship.getCoordinates();
-            coordinates.x = coordinates.x * CELL_SIZE;
-            coordinates.y = coordinates.y * CELL_SIZE;
-            playerShips.add(new UIShip(
-                    ship.getName(),
-                    coordinates,
-                    ship.getSpeed(),
-                    ship.getClass().getSimpleName()));
-        }
-        return  playerShips;
-    }
-
-    public void updateCurrentPlayer(String name) {
-        if(Objects.equals(player1.getName(), name)) {
-            this.currentPlayer = player1;
-        }
-        else {
-            this.currentPlayer = player2;
-        }
     }
 
     public Integer getButtonNumberFromMouseCoordinates(int x, int y) {
