@@ -71,21 +71,28 @@ public class GameFieldPanel extends JPanel implements ActionListener {
             g.drawLine(0, i * CELL_SIZE, screenWidth, i * CELL_SIZE);
         }
 
-        // internal cell
+        // hovered cell
         if (hoveredCell != null){
-            boolean found = false;
-            for(SpaceShip ship: Data.getCurrentPlayerShips()) {
-                if (ship.getCoordinates().scaled(CELL_SIZE).equals(hoveredCell)) {
-                    g.setColor(Color.green);
-                    found = true;
-                    break;
-                }
+            boolean found = findShipByCoordinates(hoveredCell);
+            if (found) {
+                drawCellOfColor(g, hoveredCell, Color.green);
             }
-            if (!found) {
-                g.setColor(Color.gray);
+            else {
+                drawCellOfColor(g, hoveredCell, Color.gray);
             }
             g.drawRect(hoveredCell.x, hoveredCell.y, CELL_SIZE, CELL_SIZE);
             previousHoveredCell = hoveredCell;
+        }
+
+        // selected cell
+
+        if (selectedCell != null) {
+            if (findShipByCoordinates(selectedCell)) {
+                drawCellOfColor(g, selectedCell, Color.green);
+            }
+            else {
+                selectedCell = null;
+            }
         }
 
         // turn, player
@@ -100,26 +107,23 @@ public class GameFieldPanel extends JPanel implements ActionListener {
         drawShipsOfPlayer(g, Data.getPlayer2());
 
         // ship info
-
-        drawShipInfoIfHoveredOrSelected(g, Data.getPlayer1(), hoveredCell);
-        drawShipInfoIfHoveredOrSelected(g, Data.getPlayer2(), hoveredCell);
         drawShipInfoIfHoveredOrSelected(g, Data.getCurrentPlayer(), selectedCell);
-
-        // selected cell
-
-        if (selectedCell != null) {
-            boolean found = false;
-            for(SpaceShip ship: Data.getCurrentPlayerShips()) {
-                if (ship.getCoordinates().scaled(CELL_SIZE).equals(selectedCell)) {
-                    g.setColor(Color.green);
-                    found = true;
-                    break;
-                }
-            }
-            if (found) {
-                g.drawRect(selectedCell.x, selectedCell.y, CELL_SIZE, CELL_SIZE);
-            }
+        if (selectedCell == null){
+            drawShipInfoIfHoveredOrSelected(g, Data.getPlayer1(), hoveredCell);
+            drawShipInfoIfHoveredOrSelected(g, Data.getPlayer2(), hoveredCell);
         }
+    }
+
+    private boolean findShipByCoordinates(Coordinates coordinates) {
+        SpaceShip found = Data.getCurrentPlayerShips().stream()
+                .filter(ship -> coordinates.equals(ship.getCoordinates().scaled(CELL_SIZE)))
+                .findAny().orElse(null);
+        return found != null;
+    }
+
+    private void drawCellOfColor(Graphics g, Coordinates cellCoordinates, Color color) {
+        g.setColor(color);
+        g.drawRect(cellCoordinates.x, cellCoordinates.y, CELL_SIZE, CELL_SIZE);
     }
 
     private void drawShipsOfPlayer(Graphics g, Player player) {
@@ -136,17 +140,16 @@ public class GameFieldPanel extends JPanel implements ActionListener {
     }
 
     private void drawShipInfoIfHoveredOrSelected(Graphics g, Player player, Coordinates mouseCoordinates) {
-        String shipType = null;
-        for(SpaceShip ship: player.getShips()) {
-            if (ship.getCoordinates().scaled(CELL_SIZE).equals(mouseCoordinates)) {
-                shipType = ship.getType();
-                break;
-            }
+        if (mouseCoordinates == null) {
+            return;
         }
-        if (shipType != null) {
+        SpaceShip found = player.getShips().stream()
+                .filter(ship -> mouseCoordinates.equals(ship.getCoordinates().scaled(CELL_SIZE)))
+                .findAny().orElse(null);
+        if (found != null) {
             g.setColor(Color.white);
             g.setFont(new Font("Sans", Font.PLAIN, 15));
-            String message = "Ship of type " + shipType + " of player: " + player.getName();
+            String message = "Ship of type " + found.getType() + " of player: " + player.getName();
             g.drawString(message,  0, g.getFont().getSize());
             repaint();
         }
