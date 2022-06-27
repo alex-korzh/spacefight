@@ -9,7 +9,6 @@ import name.dezalator.model.util.Coordinates;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -21,10 +20,12 @@ public class GameFieldPanel extends JPanel implements ActionListener {
     Coordinates hoveredCell;
     Coordinates previousHoveredCell;
     Coordinates selectedCell;
+    SpaceShip selectedShip;
     MenuData menuData;
     boolean inGame;
     Coordinates min;
     Coordinates max;
+    Map<SpaceShip, Boolean> usedShips;
 
     public GameFieldPanel(int screenWidth, int screenHeight) {
         this.screenWidth = screenWidth;
@@ -39,6 +40,8 @@ public class GameFieldPanel extends JPanel implements ActionListener {
         this.inGame = false;
         this.min = new Coordinates(0,0);
         this.max = new Coordinates(screenWidth/CELL_SIZE, screenHeight/CELL_SIZE);
+        this.selectedShip = null;
+        this.usedShips = new HashMap<>();
     }
 
 
@@ -92,21 +95,25 @@ public class GameFieldPanel extends JPanel implements ActionListener {
         drawShipsOfPlayer(g, Data.getPlayer2());
 
         // ship info
-        drawShipInfoIfHoveredOrSelected(g, Data.getCurrentPlayer(), selectedCell);
-        if (selectedCell == null){
+
+        if (selectedShip == null){
             drawShipInfoIfHoveredOrSelected(g, Data.getPlayer1(), hoveredCell);
             drawShipInfoIfHoveredOrSelected(g, Data.getPlayer2(), hoveredCell);
+        } else {
+            drawShipInfoIfHoveredOrSelected(g, Data.getCurrentPlayer(), selectedShip.getCoordinates().scaled(CELL_SIZE));
         }
 
         // available for move
 
         for (SpaceShip ship: Data.getCurrentPlayerShips()) {
-            BFS(g, ship.getCoordinates(), ship.getSpeed());
+            if (!usedShips.containsKey(ship)) {
+                BFS(g, ship.getCoordinates(), ship.getSpeed());
+            }
         }
 
         // hovered cell
         if (hoveredCell != null){
-            boolean found = findShipByCoordinates(hoveredCell);
+            boolean found = findCurrentPlayerShipByCoordinates(hoveredCell) != null;
             if (found) {
                 drawCellOfColor(g, hoveredCell, Color.green);
             }
@@ -119,13 +126,8 @@ public class GameFieldPanel extends JPanel implements ActionListener {
 
         // selected cell
 
-        if (selectedCell != null) {
-            if (findShipByCoordinates(selectedCell)) {
-                drawCellOfColor(g, selectedCell, Color.green);
-            }
-            else {
-                selectedCell = null;
-            }
+        if (selectedShip != null) {
+            drawCellOfColor(g, selectedShip.getCoordinates().scaled(CELL_SIZE), Color.green);
         }
 
     }
@@ -152,11 +154,10 @@ public class GameFieldPanel extends JPanel implements ActionListener {
     }
 
 
-    private boolean findShipByCoordinates(Coordinates coordinates) {
-        SpaceShip found = Data.getCurrentPlayerShips().stream()
+    private SpaceShip findCurrentPlayerShipByCoordinates(Coordinates coordinates) {
+        return Data.getCurrentPlayerShips().stream()
                 .filter(ship -> coordinates.equals(ship.getCoordinates().scaled(CELL_SIZE)))
                 .findAny().orElse(null);
-        return found != null;
     }
 
     private void drawCellOfColor(Graphics g, Coordinates cellCoordinates, Color color) {
@@ -214,11 +215,21 @@ public class GameFieldPanel extends JPanel implements ActionListener {
         public void mouseClicked(MouseEvent e) {
             if (inGame) {
                 Coordinates clickCoordinates = getCellCoordinatesFromMouseCoordinates(e.getX(), e.getY());
-                if (clickCoordinates.equals(selectedCell)) {
-                    selectedCell = null;
+
+                if(selectedShip != null &&
+                        clickCoordinates.unscaled(CELL_SIZE).distance(selectedShip.getCoordinates()) <= selectedShip.getSpeed() &&
+                        !usedShips.containsKey(selectedShip)) {
+                    selectedShip.moveTo(clickCoordinates.unscaled(CELL_SIZE));
+                    usedShips.put(selectedShip, true);
+                    repaint(clickCoordinates.x, clickCoordinates.y, CELL_SIZE + 1, CELL_SIZE + 1);
+                    repaint(selectedShip.getCoordinates().scaled(CELL_SIZE).x, selectedShip.getCoordinates().scaled(CELL_SIZE).y, CELL_SIZE + 1, CELL_SIZE + 1);
+                }
+
+                if (selectedShip != null && clickCoordinates.equals(selectedShip.getCoordinates())) {
+                    selectedShip = null;
                     repaint(clickCoordinates.x, clickCoordinates.y, CELL_SIZE + 1, CELL_SIZE + 1);
                 } else {
-                    selectedCell = clickCoordinates;
+                    selectedShip = findCurrentPlayerShipByCoordinates(clickCoordinates); // null if not found
                     repaint(clickCoordinates.x, clickCoordinates.y, CELL_SIZE + 1, CELL_SIZE + 1);
                 }
             }
@@ -276,6 +287,7 @@ public class GameFieldPanel extends JPanel implements ActionListener {
     public void endTurn() {
         Engine.notifyGame(Event.END_TURN);
         this.selectedCell = null;
+        this.usedShips.clear();
         repaint();
     }
 

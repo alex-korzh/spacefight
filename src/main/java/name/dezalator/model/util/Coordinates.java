@@ -22,6 +22,10 @@ public class Coordinates {
         return new Coordinates(this.x*scale, this.y*scale);
     }
 
+    public Coordinates unscaled(int scale) {
+        return new Coordinates(this.x/scale, this.y/scale);
+    }
+
     public ArrayList<Coordinates> getNeighbours() {
         return new ArrayList<>(Arrays.asList(
                 new Coordinates(this.x+1, this.y),
